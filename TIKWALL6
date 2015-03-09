@@ -1,0 +1,44 @@
+### TIKWALL6 Script Bundle
+/system script
+add comment="Initial preparation step for TIKWALL for IPv6: ACCEPTs everything on INPUT and OUTPUT tables. REJECTs on FORWARD." name=TIKWALL6_0_STOPFW policy=read,write \
+    source="###############################################################################\
+    \n# TIKWALL6 v. 0.1\
+    \n# Project home: https://github.com/atsonkov/tikwall\
+    \n###############################################################################\
+    \n# Copyright 2015 Atanas Tsonkov\
+    \n# Licensed under the Apache License, Version 2.0 (the \"License\");\
+    \n# you may not use this file except in compliance with the License.\
+    \n# You may obtain a copy of the License at\
+    \n#   http://www.apache.org/licenses/LICENSE-2.0\
+    \n# Unless required by applicable law or agreed to in writing, software\
+    \n# distributed under the License is distributed on an \"AS IS\" BASIS,\
+    \n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\
+    \n# See the License for the specific language governing permissions and\
+    \n# limitations under the License.\
+    \n###############################################################################\
+    \n\
+    \n:global checkSafeMode do={\
+    \n:if ([/system script find name=\"TIKWALL_SAFEMODE_TEST\"]!=\"\") do={\
+    \n  #SAFEMODE_TEST exists. Removing...\
+    \n  /system script remove TIKWALL_SAFEMODE_TEST\
+    \n};\
+    \n#Creating SAFEMODE_TEST.\
+    \n/system script add name=\"TIKWALL_SAFEMODE_TEST\"\
+    \n/system script remove TIKWALL_SAFEMODE_TEST\
+    \n:if ( [/system history find floating-undo] != \"\" ) do={\
+    \n  return [:tobool true]\
+    \n} else={\
+    \n  return [:tobool false]\
+    \n}\
+    \n}\
+    \n\
+    \n:if ( [\$checkSafeMode] != [:tobool true] ) do={\
+    \n  :put \"This script is supposed to be run in SAFE MODE. Please press Ctrl+X and run it again!\"\
+    \n} else={\
+    \n  # Looks like we are in safe mode. Good!\
+    \n  \
+    \n  \
+    \n  :put \"Please leave safe mode before running TIKWALL6_1_CLEANUP\"\
+    \n}\
+    \n\
+    \n:set checkSafeMode"
