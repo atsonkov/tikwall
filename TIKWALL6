@@ -1,7 +1,8 @@
 ### TIKWALL6 Script Bundle
 /system script
-add comment="Initial preparation step for TIKWALL for IPv6: ACCEPTs everything on INPUT and OUTPUT tables. REJECTs on FORWARD." name=TIKWALL6_0_STOPFW policy=read,write \
-    source="###############################################################################\
+add comment="Initial preparation step of TIKWALL for IPv6: Create/Enable MINFWALL rules. They allow minimal set of incoming traffic (SSH, but can be configured further) and al\
+    l outgoing traffic, but block forwarding until the rest of the firewall is loaded." name=TIKWALL6_0_MINFWALL policy=read,write source="####################################\
+    ###########################################\
     \n# TIKWALL6 v. 0.1\
     \n# Project home: https://github.com/atsonkov/tikwall\
     \n###############################################################################\
@@ -42,3 +43,54 @@ add comment="Initial preparation step for TIKWALL for IPv6: ACCEPTs everything o
     \n}\
     \n\
     \n:set checkSafeMode"
+add comment="Cleanup step of TIKWALL for IPv6: Remove all rules except the MINFWALL ones." name=TIKWALL6_1_CLEANUP policy=read,write source="##################################\
+    #############################################\
+    \n# TIKWALL v. 0.1\
+    \n# Project home: https://github.com/atsonkov/tikwall\
+    \n###############################################################################\
+    \n# Copyright 2015 Atanas Tsonkov\
+    \n# Licensed under the Apache License, Version 2.0 (the \"License\");\
+    \n# you may not use this file except in compliance with the License.\
+    \n# You may obtain a copy of the License at\
+    \n#   http://www.apache.org/licenses/LICENSE-2.0\
+    \n# Unless required by applicable law or agreed to in writing, software\
+    \n# distributed under the License is distributed on an \"AS IS\" BASIS,\
+    \n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\
+    \n# See the License for the specific language governing permissions and\
+    \n# limitations under the License.\
+    \n###############################################################################\
+    \n"
+add comment="Build step of TIKWALL for IPv6: Define all necessary Firewall rules according to the configuration." name=TIKWALL6_2_BUILD policy=read,write source="#############\
+    ##################################################################\
+    \n# TIKWALL v. 0.1\
+    \n# Project home: https://github.com/atsonkov/tikwall\
+    \n###############################################################################\
+    \n# Copyright 2015 Atanas Tsonkov\
+    \n# Licensed under the Apache License, Version 2.0 (the \"License\");\
+    \n# you may not use this file except in compliance with the License.\
+    \n# You may obtain a copy of the License at\
+    \n#   http://www.apache.org/licenses/LICENSE-2.0\
+    \n# Unless required by applicable law or agreed to in writing, software\
+    \n# distributed under the License is distributed on an \"AS IS\" BASIS,\
+    \n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\
+    \n# See the License for the specific language governing permissions and\
+    \n# limitations under the License.\
+    \n###############################################################################\
+    \n"
+add comment="Activation of TIKWALL for IPv6: Activate the Firewall prepared in the previous steps, by disabling the MINFWALL rules." name=TIKWALL6_3_ACTIVATE policy=\
+    read,write source="###############################################################################\
+    \n# TIKWALL v. 0.1\
+    \n# Project home: https://github.com/atsonkov/tikwall\
+    \n###############################################################################\
+    \n# Copyright 2015 Atanas Tsonkov\
+    \n# Licensed under the Apache License, Version 2.0 (the \"License\");\
+    \n# you may not use this file except in compliance with the License.\
+    \n# You may obtain a copy of the License at\
+    \n#   http://www.apache.org/licenses/LICENSE-2.0\
+    \n# Unless required by applicable law or agreed to in writing, software\
+    \n# distributed under the License is distributed on an \"AS IS\" BASIS,\
+    \n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\
+    \n# See the License for the specific language governing permissions and\
+    \n# limitations under the License.\
+    \n###############################################################################\
+    \n"
