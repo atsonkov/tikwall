@@ -63,8 +63,18 @@ add comment="TIKWALL for IPv6 Initial preparation step: Create/Enable MINFWALL r
     \n  :foreach rule in=[ /ipv6 firewall filter find chain=TIKWALL_MINFW_IN  ] do={ /ipv6 firewall filter remove \$rule };\
     \n  :foreach rule in=[ /ipv6 firewall filter find chain=TIKWALL_MINFW_OUT ] do={ /ipv6 firewall filter remove \$rule };\
     \n  # At this point even if there was MINFWALL chain, it should have been cleaned up. Creating the rules we need.\
-    \n  /ipv6 firewall filter add place-before=0 disabled=yes chain=output action=jump jump-target=TIKWALL_MINFW_OUT\
-    \n  /ipv6 firewall filter add place-before=0 disabled=yes chain=input  action=jump jump-target=TIKWALL_MINFW_IN\
+    \n  do {\
+    \n    /ipv6 firewall filter add place-before=0 disabled=yes chain=output action=jump jump-target=TIKWALL_MINFW_OUT\
+    \n  } on-error={\
+    \n    # No other rules in output chain\? Adding it without place-before=0\
+    \n    /ipv6 firewall filter add disabled=yes chain=output action=jump jump-target=TIKWALL_MINFW_OUT\
+    \n  }\
+    \n  do {\
+    \n    /ipv6 firewall filter add place-before=0 disabled=yes chain=input  action=jump jump-target=TIKWALL_MINFW_IN\
+    \n  } on-error={\
+    \n    # No other rules in input chain\? Adding it without place-before=0\
+    \n    /ipv6 firewall filter add disabled=yes chain=input  action=jump jump-target=TIKWALL_MINFW_IN\
+    \n  }\
     \n  # Create the necessary rules inside MINFWALL\
     \n  \$minfwRules\
     \n  # Enable Input -> MINFWALL\
