@@ -1,8 +1,8 @@
 ### TIKWALL6 Script Bundle
 /system script
-add comment="Initial preparation step of TIKWALL for IPv6: Create/Enable MINFWALL rules. They allow minimal set of incoming traffic (SSH, but can be configured further) and al\
-    l outgoing traffic, but block forwarding until the rest of the firewall is loaded." name=TIKWALL6_0_MINFWALL policy=read,write source="####################################\
-    ###########################################\
+add comment="TIKWALL for IPv6 Initial preparation step: Create/Enable MINFWALL rules. They allow minimal set of incoming traffic (SSH, but can be configured further) and all o\
+    utgoing traffic, but block forwarding until the rest of the firewall is loaded." name=TIKWALL6_0_MINFWALL policy=read,write source="#######################################\
+    ########################################\
     \n# TIKWALL6 v. 0.1\
     \n# Project home: https://github.com/atsonkov/tikwall\
     \n###############################################################################\
@@ -18,33 +18,65 @@ add comment="Initial preparation step of TIKWALL for IPv6: Create/Enable MINFWAL
     \n# limitations under the License.\
     \n###############################################################################\
     \n\
-    \n:global checkSafeMode do={\
-    \n:if ([/system script find name=\"TIKWALL_SAFEMODE_TEST\"]!=\"\") do={\
-    \n  #SAFEMODE_TEST exists. Removing...\
-    \n  /system script remove TIKWALL_SAFEMODE_TEST\
-    \n};\
-    \n#Creating SAFEMODE_TEST.\
-    \n/system script add name=\"TIKWALL_SAFEMODE_TEST\"\
-    \n/system script remove TIKWALL_SAFEMODE_TEST\
-    \n:if ( [/system history find floating-undo] != \"\" ) do={\
-    \n  return [:tobool true]\
-    \n} else={\
-    \n  return [:tobool false]\
+    \n:global minfwRules do={\
+    \n######\
+    \n### User configurable section\
+    \n\
+    \n#Allowed incoming traffic (Default: SSH\
+    \n  /ipv6 firewall filter add chain=TIKWALL_MINFW_IN dst-port=22 protocol=tcp action=accept\
+    \n\
+    \n#Allowed outgoing traffic (Default: all)\
+    \n  /ipv6 firewall filter add chain=TIKWALL_MINFW_OUT action=accept\
+    \n\
+    \n### End of user configurable section\
+    \n######\
     \n}\
+    \n\
+    \n:global checkSafeMode do={\
+    \n  :if ([/system script find name=\"TIKWALL_SAFEMODE_TEST\"]!=\"\") do={\
+    \n    #SAFEMODE_TEST exists. Removing...\
+    \n    /system script remove TIKWALL_SAFEMODE_TEST\
+    \n  };\
+    \n\
+    \n  #Creating SAFEMODE_TEST.\
+    \n  /system script add name=\"TIKWALL_SAFEMODE_TEST\"\
+    \n  /system script remove TIKWALL_SAFEMODE_TEST\
+    \n  :if ( [/system history find floating-undo] != \"\" ) do={\
+    \n    return [:tobool true]\
+    \n  } else={\
+    \n    return [:tobool false]\
+    \n  }\
     \n}\
     \n\
     \n:if ( [\$checkSafeMode] != [:tobool true] ) do={\
     \n  :put \"This script is supposed to be run in SAFE MODE. Please press Ctrl+X and run it again!\"\
     \n} else={\
     \n  # Looks like we are in safe mode. Good!\
-    \n  \
-    \n  \
+    \n\
+    \n  # Make backup of current IPv6 firewall to file\
+    \n  /ipv6 firewall filter export file=TIKWALL_Backup\
+    \n\
+    \n  # Cleanup previous MINFWALL\
+    \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_IN  ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_OUT ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  # Delete all rules inside MINFWALL chain\
+    \n  :foreach rule in=[ /ipv6 firewall filter find chain=TIKWALL_MINFW_IN  ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  :foreach rule in=[ /ipv6 firewall filter find chain=TIKWALL_MINFW_OUT ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  # At this point even if there was MINFWALL chain, it should have been cleaned up. Creating the rules we need.\
+    \n  /ipv6 firewall filter add place-before=0 disabled=yes chain=output action=jump jump-target=TIKWALL_MINFW_OUT\
+    \n  /ipv6 firewall filter add place-before=0 disabled=yes chain=input  action=jump jump-target=TIKWALL_MINFW_IN\
+    \n  # Create the necessary rules inside MINFWALL\
+    \n  \$minfwRules\
+    \n  # Enable Input -> MINFWALL\
+    \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_IN  ] do={ /ipv6 firewall filter set \$rule disabled=no };\
+    \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_OUT ] do={ /ipv6 firewall filter set \$rule disabled=no };\
+    \n\
     \n  :put \"Please leave safe mode before running TIKWALL6_1_CLEANUP\"\
     \n}\
     \n\
     \n:set checkSafeMode"
-add comment="Cleanup step of TIKWALL for IPv6: Remove all rules except the MINFWALL ones." name=TIKWALL6_1_CLEANUP policy=read,write source="##################################\
-    #############################################\
+add comment="TIKWALL for IPv6 Cleanup step: Remove all rules except the MINFWALL ones." name=TIKWALL6_1_CLEANUP policy=read,write source="#####################################\
+    ##########################################\
     \n# TIKWALL v. 0.1\
     \n# Project home: https://github.com/atsonkov/tikwall\
     \n###############################################################################\
@@ -60,8 +92,8 @@ add comment="Cleanup step of TIKWALL for IPv6: Remove all rules except the MINFW
     \n# limitations under the License.\
     \n###############################################################################\
     \n"
-add comment="Build step of TIKWALL for IPv6: Define all necessary Firewall rules according to the configuration." name=TIKWALL6_2_BUILD policy=read,write source="#############\
-    ##################################################################\
+add comment="TIKWALL for IPv6 Build step: Define all necessary Firewall rules according to the configuration." name=TIKWALL6_2_BUILD policy=read,write source="################\
+    ###############################################################\
     \n# TIKWALL v. 0.1\
     \n# Project home: https://github.com/atsonkov/tikwall\
     \n###############################################################################\
@@ -77,8 +109,8 @@ add comment="Build step of TIKWALL for IPv6: Define all necessary Firewall rules
     \n# limitations under the License.\
     \n###############################################################################\
     \n"
-add comment="Activation of TIKWALL for IPv6: Activate the Firewall prepared in the previous steps, by disabling the MINFWALL rules." name=TIKWALL6_3_ACTIVATE policy=\
-    read,write source="###############################################################################\
+add comment="TIKWALL for IPv6 Activation: Activate the Firewall prepared in the previous steps, by disabling the MINFWALL rules." name=TIKWALL6_3_ACTIVATE policy=read,write \
+    source="###############################################################################\
     \n# TIKWALL v. 0.1\
     \n# Project home: https://github.com/atsonkov/tikwall\
     \n###############################################################################\
