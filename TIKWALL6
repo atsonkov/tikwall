@@ -91,7 +91,42 @@ add comment="TIKWALL for IPv6 Cleanup step: Remove all rules except the MINFWALL
     \n# See the License for the specific language governing permissions and\
     \n# limitations under the License.\
     \n###############################################################################\
-    \n"
+    \n\
+    \n:global checkSafeMode do={\
+    \n  :if ([/system script find name=\"TIKWALL_SAFEMODE_TEST\"]!=\"\") do={\
+    \n    #SAFEMODE_TEST exists. Removing...\
+    \n    /system script remove TIKWALL_SAFEMODE_TEST\
+    \n  };\
+    \n\
+    \n  #Creating SAFEMODE_TEST.\
+    \n  /system script add name=\"TIKWALL_SAFEMODE_TEST\"\
+    \n  /system script remove TIKWALL_SAFEMODE_TEST\
+    \n  :if ( [/system history find floating-undo] != \"\" ) do={\
+    \n    return [:tobool true]\
+    \n  } else={\
+    \n    return [:tobool false]\
+    \n  }\
+    \n}\
+    \n\
+    \n:if ( [\$checkSafeMode] != [:tobool false] ) do={\
+    \n  :put \"This script is NOT supposed to be run in SAFE MODE. Please press Ctrl+X and run it again!\"\
+    \n} else={\
+    \n  # Looks like we are NOT in safe mode. Good!\
+    \n\
+    \n  # Delete all rules except MINFWALL related ones\
+    \n  :foreach rule in=[ /ipv6 firewall filter find ] do={\
+    \n    if ( ([/ipv6 firewall filter get \$rule jump-target] != \"TIKWALL_MINFW_IN\" ) && \\\
+    \n         ([/ipv6 firewall filter get \$rule jump-target] != \"TIKWALL_MINFW_OUT\") && \\\
+    \n         ([/ipv6 firewall filter get \$rule chain]       != \"TIKWALL_MINFW_IN\" ) && \\\
+    \n         ([/ipv6 firewall filter get \$rule chain]       != \"TIKWALL_MINFW_OUT\") ) do={\
+    \n      /ipv6 firewall filter remove \$rule\
+    \n    }\
+    \n  };\
+    \n\
+    \n  :put \"Please run TIKWALL6_2_BUILD (without entering SAFE MODE)\"\
+    \n}\
+    \n\
+    \n:set checkSafeMode"
 add comment="TIKWALL for IPv6 Build step: Define all necessary Firewall rules according to the configuration." name=TIKWALL6_2_BUILD policy=read,write source="################\
     ###############################################################\
     \n# TIKWALL v. 0.1\
