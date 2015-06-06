@@ -81,12 +81,12 @@ add comment="TIKWALL for IPv6 Initial preparation step: Create/Enable MINFWALL r
     \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_IN  ] do={ /ipv6 firewall filter set \$rule disabled=no };\
     \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_OUT ] do={ /ipv6 firewall filter set \$rule disabled=no };\
     \n\
-    \n  :put \"Please leave safe mode before running TIKWALL6_1_CLEANUP\"\
+    \n  :put \"Please leave safe mode before running TIKWALL6_1_PREPARE\"\
     \n}\
     \n\
     \n:set checkSafeMode"
-add comment="TIKWALL for IPv6 Cleanup step: Remove all rules except the MINFWALL ones." name=TIKWALL6_1_CLEANUP policy=read,write source="#####################################\
-    ##########################################\
+add comment="TIKWALL for IPv6 Preparation step: Remove all rules except the MINFWALL ones. Define all necessary Firewall rules according to the configuration." name=\
+    TIKWALL6_1_PREPARE policy=read,write source="###############################################################################\
     \n# TIKWALL v. 0.1\
     \n# Project home: https://github.com/atsonkov/tikwall\
     \n###############################################################################\
@@ -133,28 +133,11 @@ add comment="TIKWALL for IPv6 Cleanup step: Remove all rules except the MINFWALL
     \n    }\
     \n  };\
     \n\
-    \n  :put \"Please run TIKWALL6_2_BUILD (without entering SAFE MODE)\"\
+    \n  :put \"Please enter safe mode before running TIKWALL6_2_ACTIVATE\"\
     \n}\
     \n\
     \n:set checkSafeMode"
-add comment="TIKWALL for IPv6 Build step: Define all necessary Firewall rules according to the configuration." name=TIKWALL6_2_BUILD policy=read,write source="################\
-    ###############################################################\
-    \n# TIKWALL v. 0.1\
-    \n# Project home: https://github.com/atsonkov/tikwall\
-    \n###############################################################################\
-    \n# Copyright 2015 Atanas Tsonkov\
-    \n# Licensed under the Apache License, Version 2.0 (the \"License\");\
-    \n# you may not use this file except in compliance with the License.\
-    \n# You may obtain a copy of the License at\
-    \n#   http://www.apache.org/licenses/LICENSE-2.0\
-    \n# Unless required by applicable law or agreed to in writing, software\
-    \n# distributed under the License is distributed on an \"AS IS\" BASIS,\
-    \n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\
-    \n# See the License for the specific language governing permissions and\
-    \n# limitations under the License.\
-    \n###############################################################################\
-    \n"
-add comment="TIKWALL for IPv6 Activation: Activate the Firewall prepared in the previous steps, by disabling the MINFWALL rules." name=TIKWALL6_3_ACTIVATE policy=read,write \
+add comment="TIKWALL for IPv6 Activation: Activate the Firewall prepared in the previous steps, by removing the MINFWALL rules." name=TIKWALL6_2_ACTIVATE policy=read,write \
     source="###############################################################################\
     \n# TIKWALL v. 0.1\
     \n# Project home: https://github.com/atsonkov/tikwall\
@@ -170,7 +153,39 @@ add comment="TIKWALL for IPv6 Activation: Activate the Firewall prepared in the 
     \n# See the License for the specific language governing permissions and\
     \n# limitations under the License.\
     \n###############################################################################\
-    \n"
+    \n\
+    \n:global checkSafeMode do={\
+    \n  :if ([/system script find name=\"TIKWALL_SAFEMODE_TEST\"]!=\"\") do={\
+    \n    #SAFEMODE_TEST exists. Removing...\
+    \n    /system script remove TIKWALL_SAFEMODE_TEST\
+    \n  };\
+    \n\
+    \n  #Creating SAFEMODE_TEST.\
+    \n  /system script add name=\"TIKWALL_SAFEMODE_TEST\"\
+    \n  /system script remove TIKWALL_SAFEMODE_TEST\
+    \n  :if ( [/system history find floating-undo] != \"\" ) do={\
+    \n    return [:tobool true]\
+    \n  } else={\
+    \n    return [:tobool false]\
+    \n  }\
+    \n}\
+    \n\
+    \n:if ( [\$checkSafeMode] != [:tobool true] ) do={\
+    \n  :put \"This script is supposed to be run in SAFE MODE. Please press Ctrl+X and run it again!\"\
+    \n} else={\
+    \n  # Looks like we are in safe mode. Good!\
+    \n\
+    \n  # Cleanup MINFWALL part\
+    \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_IN  ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  :foreach rule in=[ /ipv6 firewall filter find jump-target=TIKWALL_MINFW_OUT ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  # Delete all rules inside MINFWALL chain\
+    \n  :foreach rule in=[ /ipv6 firewall filter find chain=TIKWALL_MINFW_IN  ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  :foreach rule in=[ /ipv6 firewall filter find chain=TIKWALL_MINFW_OUT ] do={ /ipv6 firewall filter remove \$rule };\
+    \n  # At this point even if there was MINFWALL chain, it should have been cleaned up.\
+    \n  :put \"Your TIKWALL6 is now active.\"\
+    \n}\
+    \n\
+    \n:set checkSafeMode"
 add comment="TIKWALL for IPv6 Initialize step: Create initial configuration (or reconfigure to the default configuration) that could be customized later." name=TIKWALL6_INIT \
     policy=read,write source="###############################################################################\
     \n# TIKWALL6 v. 0.1\
@@ -187,6 +202,5 @@ add comment="TIKWALL for IPv6 Initialize step: Create initial configuration (or 
     \n# See the License for the specific language governing permissions and\
     \n# limitations under the License.\
     \n###############################################################################\
-    \n"
     \n\
-    \n# It should create the initial TIKWALL6_0_MINFWALL_CUSTOM and TIKWALL6_2_BUILD_CUSTOM"
+    \n# It should create the initial TIKWALL6_0_MINFWALL_CUSTOM and TIKWALL6_1_BUILD_CUSTOM"
